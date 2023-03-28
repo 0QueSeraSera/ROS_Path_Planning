@@ -1,0 +1,5 @@
+map_grid_->data[toIndex(i, j)]
+
+map_grid_ is the occupancy grid map pointer
+
+map_grid_->data holds free/obs information
