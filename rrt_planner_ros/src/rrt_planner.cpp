@@ -1,8 +1,4 @@
 #include "rrt_planner/rrt_planner.h"
-#include <iostream>
-#include <math.h>
-
-using namespace std;
 
 namespace rrt_planner
 {
@@ -39,7 +35,7 @@ RRTPlanner::RRTPlanner(ros::NodeHandle * node)
     // if map, initial pose, and goal have been received
     // build the map image, draw initial pose and goal, and plan
     if (map_received_ && init_pose_received_ && goal_received_) {
-      cout << "init done, start planning" << endl;
+      ROS_INFO("init done. start planning");
       buildMapImage();
       drawGoalInitPose();
       plan();
@@ -132,11 +128,11 @@ Point2D RRTPlanner::randomPoint() {
   Point2D random_point;
   random_point.x(x_distribution(generator));
   random_point.y(y_distribution(generator));
-  ROS_INFO("randomPoint returns random_point: (%d, %d)", random_point.x(), random_point.y());
+  // ROS_INFO("randomPoint returns random_point: (%d, %d)", random_point.x(), random_point.y());
   return random_point;
 }
 
-int RRTPlanner::NearestNeighbour(const vector<treeNode> &tree, const Point2D &s) {
+int RRTPlanner::NearestNeighbour(const std::vector<treeNode> &tree, const Point2D &s) {
   int parent_id = -1;
   int w = map_grid_->info.width, h = map_grid_->info.height;
   double min_dist = w * w + h * h;
@@ -150,26 +146,21 @@ int RRTPlanner::NearestNeighbour(const vector<treeNode> &tree, const Point2D &s)
       parent_id = i;
     }
   }
-  ROS_INFO("NearestNeighbour returns parent_id: %d", parent_id);
+  // ROS_INFO("NearestNeighbour returns parent_id: %d", parent_id);
   return parent_id;
 }
 
-void RRTPlanner::extractPath(const vector<treeNode> &tree, int goal_id) {
+void RRTPlanner::extractPath(const std::vector<treeNode> &tree, int goal_id) {
 
-  cout << "extractPath" << endl;
-  cout << "tree size: " << tree.size() << endl;
+  // ROS_INFO("tree size: %d", tree.size());
   int cur_id = goal_id;
   while (cur_id != 0) {
-    cout << "cur_id: " << cur_id << endl;
     path_.push_back(tree[cur_id].pos);
     cur_id = tree[cur_id].parent_idx;
   }
-  cout << "path extracted" << endl;
+  ROS_INFO("Path extracted");
   path_.push_back(tree[0].pos);
-  reverse(path_.begin(), path_.end());
-  // for (int i = 0; i < path_.size(); i++) {
-  //   cout << "node: " << i << " " << path_[i].x() << ", " << path_[i].y() << endl;
-  // }
+  std::reverse(path_.begin(), path_.end());
 }
 
 Point2D RRTPlanner::acquireNewState(double step_len, const Point2D &nearest, const Point2D &sample) {
@@ -193,22 +184,20 @@ void RRTPlanner::plan()
   double goal_threshold = 5; // distance threshold to goal
   double step_len = 5; // new state's distance to parent
 
-  vector<treeNode> tree;
+  std::vector<treeNode> tree;
   treeNode start(init_pose_, 0); // init the start node with parent_id = 0
   tree.push_back(start);
   int maxIter = 100000;
   int iter = 0;
   while (not goal_received_) {
-    cout << iter << endl;
     iter++;
     Point2D new_sample = randomPoint();
     // ROS_INFO("new point: (%d, %d)", new_sample.x(), new_sample.y());
     if (isPointUnoccupied(new_sample)) {
 
       int parent_id = NearestNeighbour(tree, new_sample);
-      ROS_INFO("parent_id: %d, tree size: %d", parent_id, tree.size());
+      // ROS_INFO("parent_id: %d, tree size: %d", parent_id, tree.size());
       int cur_id = tree.size();
-      // cout << "cur_id: " << cur_id << endl;
       Point2D new_state = acquireNewState(step_len, tree[parent_id].pos, new_sample);
       if (not isPointUnoccupied(new_state)) {
         continue;
@@ -224,10 +213,8 @@ void RRTPlanner::plan()
 
         extractPath(tree, cur_id);
       }
-      else {
-        ROS_INFO("goal not reached with new point: (%d, %d)", new_state.x(), new_state.y());
-      }
       if (iter > maxIter) {
+        ROS_WARN("max iteration reached");
         break;
       }
     }
@@ -253,7 +240,7 @@ void RRTPlanner::publishPath()
   path.header.stamp = ros::Time::now();
 
   // TODO: Fill nav_msgs::Path msg with the path calculated by RRT
-  cout << "publish path" << endl;
+  ROS_INFO("publishPath");
   for (int i = 0; i < path_.size(); i++) {
     geometry_msgs::PoseStamped pose;
     pose.pose.position.x = path_[i].x();

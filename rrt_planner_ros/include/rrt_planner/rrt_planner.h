@@ -4,6 +4,7 @@
 #include <random>
 #include <iostream>
 #include <vector>
+#include <cmath>
 
 #include <ros/ros.h>
 #include <nav_msgs/OccupancyGrid.h>
@@ -12,7 +13,7 @@
 #include <geometry_msgs/PoseStamped.h>
 
 #include <opencv2/opencv.hpp>
-using namespace std;
+// using namespace std;
 
 namespace rrt_planner
 {
@@ -75,17 +76,23 @@ public:
   ~RRTPlanner() = default;
 
   /*
-  Generate random sampling points
+  * Generate random sampling points
   */
   Point2D randomPoint();
 
   /*
   Find the nearest neighbour
   */
-  int NearestNeighbour(const vector<treeNode> &tree, const Point2D &s);
+  int NearestNeighbour(const std::vector<treeNode> &tree, const Point2D &s);
 
-  void extractPath(const vector<treeNode> &tree, int last_node_idx);
+  /**
+   * Extract the path from the tree
+  */
+  void extractPath(const std::vector<treeNode> &tree, int last_node_idx);
 
+  /**
+   * add new node to the tree according to the sampled point.
+  */
   Point2D acquireNewState(double step_len, const Point2D &nearest, const Point2D &sample);
 
   /**
@@ -179,7 +186,7 @@ private:
   inline void poseToPoint(Point2D &, const geometry_msgs::Pose &);
 
   /**
-   * Utility function to convert (x, y) matrix coordinate to corresponding vector coordinate
+   * Utility function to convert (x, y) matrix coordinate to corresponding std::vector coordinate
    */
   inline int toIndex(int, int);
 
@@ -201,7 +208,7 @@ private:
   bool goal_received_;
   Point2D goal_;
 
-  vector<Point2D> path_;
+  std::vector<Point2D> path_;
 
   ros::Subscriber map_sub_;
   ros::Subscriber init_pose_sub_;
